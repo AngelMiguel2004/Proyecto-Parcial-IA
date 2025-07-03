@@ -552,16 +552,18 @@ class Game:
             i += 1
 
             if p != "O":
+                # Si el pilar no es "O", crea el muro correspondiente en el laberinto
                 rect = pygame.Rect(int(x+x_offset), int(y+y_offset), int(w), int(h))
                 mazewall = WallObject(screen, WALL_COLOR, rect)
                 self.sprites.add(mazewall)
                 self.wallgrp.add(mazewall)
 
-        # NOTE: exit door is opposite of where player exited maze
+        # NOTA: la puerta de salida está en el lado opuesto de donde el jugador salió del laberinto
         x,y,w,h = 0,0,0,0
         doors = maze.getDoors()
         for door in doors[:]:
             if door in ("E", "W"):
+                # Si la puerta es Este u Oeste, calcula su posición y tamaño
                 y = BORDER_YMIN + WALLTHICKNESS + BORDER_VSEGMENT
                 w,h = WALLTHICKNESS//2, BORDER_VSEGMENT
                 if door == "E":
@@ -569,6 +571,7 @@ class Game:
                 else:
                     x = BORDER_XMIN + WALLTHICKNESS//4
             elif door in ("N", "S"):
+                # Si la puerta es Norte o Sur, calcula su posición y tamaño
                 x = BORDER_XMIN + WALLTHICKNESS + BORDER_HSEGMENT*2
                 w,h = BORDER_HSEGMENT, WALLTHICKNESS//2
                 if door == "N":
