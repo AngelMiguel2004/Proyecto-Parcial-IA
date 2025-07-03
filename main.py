@@ -1,5 +1,5 @@
 import sys
-from pyberzerk import GameState
+from logica import GameState
 
 #INicializa el juego
 if __name__ == "__main__":

@@ -13,8 +13,8 @@ __author__ = 'TerryO'
 import sys, os, platform, pygame
 from pygame.locals import *
 from config import *
-from Enemigo import *
-from player import *
+from enemigo import *
+from jugador import *
 from bullet import *
 from otto import *
 from maze import *
