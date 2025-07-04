@@ -1,8 +1,8 @@
-import pygame, spritesheet, random
+import pygame, Scripts.spritesheet as spritesheet, random
 from pygame.locals import *
-from config import *
-from animateobj import *
-from bullet import *
+from Scripts.constantes import *
+from Scripts.animateobj import *
+from Scripts.disparos import *
 
 """
 Diccionario de movimientos y disparos del jugador.

@@ -1,6 +1,6 @@
 import sys
 import pygame
-from config import *
+from Scripts.constantes import *
 
 # Clase WallObject, representa una pared en el laberinto
 class WallObject(pygame.sprite.Sprite):

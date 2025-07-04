@@ -1,6 +1,6 @@
-import pygame, spritesheet
-from constantes import *
-from animateobj import *
+import pygame, Scripts.spritesheet as spritesheet
+from Scripts.constantes import *
+from Scripts.animateobj import *
 
 # Clase Lives, representa las vidas del jugador en pantalla
 class Lives(pygame.sprite.Sprite):
