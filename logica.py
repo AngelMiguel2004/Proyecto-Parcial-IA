@@ -9,68 +9,93 @@ print("¡Bienvenido a PyBerzerk! Ejecutando el juego...")
 
 __author__ = 'TerryO'
 
-
+# Importaciones de módulos y recursos necesarios
 import sys, os, platform, pygame
 from pygame.locals import *
-from config import *
-from enemigo import *
-from jugador import *
-from bullet import *
-from otto import *
-from maze import *
-from wall import *
-from lives import *
-from score import *
-from utils import *
-from grid import *
+from Scripts.constantes import *
+from Scripts.Enemigo import *
+from Scripts.jugador import *
+from Scripts.disparos import *
+from Scripts.Enemigoflotante import *
+from Scripts.laberinto import *
+from Scripts.wall import *
+from Scripts.vidas import *
+from Scripts.record import *
+from Scripts.utils import *
+from Scripts.grid import *
 import itertools
 
+# --- Constantes globales ---
+SCREEN_RECT = Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)   # dimensiones de la pantalla
 
-#--- Global constants ---
-SCREEN_RECT = Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)   # screen dimensions
+# Lista de claves de imágenes para la caché
+IMAGEKEYS = ['player', 'robot', 'otto', 'robotexplode', 'lives', 'bullets', 'icon']
 
-# image cache
-IMAGEKEYS = ['player', 'robot', 'otto', 'robotexplode', 'lives', 'bullets', 'icon']         #image keys
+# Diccionario para mapear teclas de dirección a valores binarios
+DIRECT_DICT = {K_LEFT : 0x01, K_RIGHT : 0x02, K_UP : 0x04, K_DOWN : 0x08, K_SPACE : 0x10}
 
-DIRECT_DICT = {K_LEFT : 0x01, K_RIGHT : 0x02, K_UP : 0x04, K_DOWN : 0x08, K_SPACE : 0x10}   # keyboard keys
-
-GAME_STATES = ["HighScores", "Cntrls", "Play"]  # game states
+# Estados posibles del juego
+GAME_STATES = ["HighScores", "Cntrls", "Play"]
 
 screen = None
 
-
-# class handles our game states(screens)
+# Clase que maneja los estados del juego (pantallas)
 class GameState:
     def __init__(self):
-        # prepare pygame environment
-        os.environ['SDL_VIDEO_CENTERED'] = '1'      # center the screen
+        # Prepara el entorno de pygame
+        os.environ['SDL_VIDEO_CENTERED'] = '1'      # centra la pantalla
         pygame.init()
         pygame.display.set_caption(CAPTION)
         pygame.mouse.set_visible(0)
         pygame.font.init()
 
-        # get directory where game & images are located
+        # Inicializa el mixer de pygame para música
+        pygame.mixer.init()
+        self.load_and_play_music()
+
+        # Obtiene el directorio donde están el juego e imágenes
         path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(path)
 
-        # images(sprites)
+        # Carga las imágenes (sprites)
         global imagefiles
         imagefiles = {}
         try:
-            imagefiles = {key: os.path.join('images', "{}.png".format(key)) for key in IMAGEKEYS}
+            imagefiles = {key: os.path.join('assets','images', "{}.png".format(key)) for key in IMAGEKEYS}
         except:
             pass
 
         global screen
         screen = pygame.display.set_mode(SCREEN_RECT.size)
 
-        # if platform.system() == "Windows":
+        # Carga el icono de la ventana
         icon = pygame.image.load(imagefiles['icon']).convert_alpha()
         pygame.display.set_icon(icon)
 
         self.game = None
+    
 
-    # highscores state
+    # Carga y reproduce música al iniciar el juego
+    # Busca archivos de música en la carpeta 'music' y reproduce el primero encontrado
+    # Si no se encuentra la carpeta o no hay música, no se reproduce nada
+    def load_and_play_music(self):
+        """Carga y reproduce la primera música encontrada en la carpeta 'music'."""
+        music_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'music')
+        if os.path.isdir(music_folder):
+            for file in os.listdir(music_folder):
+                if file.lower().endswith(('.mp3', '.ogg', '.wav')):
+                    music_path = os.path.join(music_folder, file)
+                    try:
+                        pygame.mixer.music.load(music_path)
+                        pygame.mixer.music.play(-1)  # Repetir indefinidamente
+                        print(f"Reproduciendo música: {file}")
+                    except Exception as e:
+                        print(f"No se pudo reproducir la música: {e}")
+                    break
+        else:
+            print("Carpeta 'music' no encontrada. No se reproducirá música.")
+
+    # Estado de pantalla de puntajes altos
     def HighScore(self):
         gamestate = "Play"
         keys = highScoresScreen(screen)
@@ -78,12 +103,12 @@ class GameState:
             gamestate = "Cntrls"
         self.Go(gamestate)
 
-    # controls help state
+    # Estado de pantalla de controles
     def Cntrls(self):
         gameCntrls(screen)
         self.Go("HighScore")
 
-    # play game state
+    # Estado principal de juego
     def Play(self):
         if self.game == None:
             self.game = Game()
@@ -104,6 +129,7 @@ class GameState:
          RED          17K     5
          LIGHT CYAN   19K     5
         """
+        # Configuración de colores y dificultad de los robots según el puntaje
         robotcolors = ((YELLOW, False, 0, 500, 5), (RED, True, 1, 1500, 4), (CYAN, True, 2, 3000, 3),
                        (GREEN, True, 3, 4500, 2), (PURPLE, True, 4, 6000, 1), (YELLOW, True, 5, 7500, 1),
                        (WHITE, True, -1, 10000, 1), (LIGHTSKYBLUE, True, -2, 11000, 1), (PURPLE, True, -3, 13000, 1),
@@ -111,7 +137,7 @@ class GameState:
                        (LIGHTSKYBLUE, True, -5, 999999, 1)
                        )
 
-        # maxbullets is currently not used...need to add this feature
+        # Selecciona la configuración de robots según el puntaje actual
         for color, fire, maxbullets, max_score, frameupdate in robotcolors:
             if  Score.score < max_score:
                 break
@@ -129,16 +155,18 @@ class GameState:
 
         self.Go(gamestate)
 
-    # we are done
+    # Finaliza el juego
     def Quit(self):
         pygame.quit()
         sys.exit()
 
+    # Cambia de estado del juego
     def Go(self,gamestate):
         if hasattr(self,gamestate):
             state = getattr(self,gamestate)
             state()
 
+# Clase principal del juego, maneja la lógica y los sprites
 class Game:
     def __init__(self):
         self.done = False
@@ -146,12 +174,13 @@ class Game:
         self.shotflg = False
         self.keycnt = 0
         self.movdir = 0
-        self.maze = Maze(0x53,0x31)   # starting room X,Y
+        self.maze = Maze(0x53,0x31)   # sala inicial X,Y
         self.mazeexit = None
         self.lives = MAX_LIVES
         self.bonuspts = None
         self.keys = pygame.key.get_pressed()
 
+    # Procesa los eventos de pygame
     def process_events(self):
         for e in pygame.event.get():
             if e.type == QUIT or self.keys[K_ESCAPE]:
@@ -186,13 +215,13 @@ class Game:
                     if e.key in DIRECT_DICT:
                         self.movdir &= ~DIRECT_DICT[e.key]
 
-                # checking if left modifier is pressed
+                # Verifica si el modificador izquierdo está presionado
                 if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
                     pass
 
-
+    # Lógica cuando el jugador es electrocutado
     def playerElectrocuted(self):
-        pygame.time.set_timer(PLAYER_ELECTROCUTED,0) # kill timer
+        pygame.time.set_timer(PLAYER_ELECTROCUTED,0) # desactiva el temporizador
         self.maze.exit()
         self.mazeexit = None
         self.done = True
@@ -211,43 +240,48 @@ class Game:
             screenMazeClear(screen)
         self.spriteCleanUp()
 
+    # Ejecuta la animación de electrocutar al jugador
     def electrocute(self):
         if self.player.patternkey != "electrocuting":
-            # disable any active timer(s)
+            # desactiva temporizadores activos
             pygame.time.set_timer(SPAWN_OTTO,0)
             pygame.time.set_timer(ROBOT_ACTIVE,0)
 
-            # put player in electrocut mode
+            # pone al jugador en modo electrocutado
             self.player.electrocute()
-            pygame.time.set_timer(PLAYER_ELECTROCUTED, 1000)  # 1sec
+            pygame.time.set_timer(PLAYER_ELECTROCUTED, 1000)  # 1 segundo
 
-            # robot(s) stop firing
+            # los robots dejan de disparar
             Robot.laserEnable = False
 
             for obj in self.wall2grp:
                 obj.kill()
 
+    # Lógica cuando un robot explota
     def robot_explode(self,robot):
-        # after robot explode sprite is done this is it's callback
+        # callback después de la animación de explosión
         def callback(robot):
-            robot.kill()        # get rid of explode sprite
+            robot.kill()        # elimina el sprite de explosión
 
         explode = RobotExplode(robot, callback, imagefiles['robotexplode'], ROBOTEXPLODE_RECT, ROBOTEXPLODE_SPRITES )
         self.sprites.add(explode)
-        robot.kill()            # get rid of robot sprite
+        robot.kill()            # elimina el sprite del robot
         self.score.addpoints(ROBOT_KILL_POINTS)
 
+    # Suma puntos de bonificación
     def bonusPoints(self, bonus):
         points = Bonus(GRAY, bonus)
         self.sprites.add(points)
 
+    # Otorga una vida extra
     def bonusLife(self):
         self.lives += 1
         life = Lives(self.lives, imagefiles['lives'], LIVES_RECT, GREEN)
         self.sprites.add(life)
 
+    # Verifica todas las colisiones del juego
     def check_collisions(self):
-        # check bullet collision with robots/otto
+        # verifica colisión de balas con robots/otto
         collidedict = pygame.sprite.groupcollide(self.bullets, Robot.getGroup(), False, False)
         if collidedict:
             for bullet in collidedict.keys():
@@ -259,7 +293,7 @@ class Game:
                         else:
                             pass
 
-        # check bullet collision with player
+        # verifica colisión de balas con el jugador
         collidedict = pygame.sprite.groupcollide(self.bullets, self.playergrp, False, False)
         if collidedict:
             for bullet in collidedict.keys():
@@ -273,30 +307,30 @@ class Game:
                             else:
                                 pass
 
-        # check bullet to bullet collision
+        # verifica colisión entre balas
         combo = list(itertools.combinations(self.bullets, 2))
         for a,b in combo:
             if pygame.sprite.collide_rect(a,b):
-                a.kill()    # remove from grp
+                a.kill()    # elimina del grupo
                 b.kill()
 
-        # check bullet collision with wall
+        # verifica colisión de balas con paredes
         for bullet in self.bullets:
             if pygame.sprite.spritecollideany(bullet, self.wallgrp):
                 bullet.kill()
 
-        # check robot collision with wall
+        # verifica colisión de robots con paredes
         collidedict = pygame.sprite.groupcollide(Robot.getGroup(), self.wallgrp, False, False)
         if collidedict:
             for robot in collidedict.keys():
                 if type(robot) is Robot:
                     self.robot_explode(robot)
 
-        # remove any old wall warnings
+        # elimina viejas advertencias de pared
         for x in self.wall2grp:
             x.kill()
 
-        # warn player if close to wall by highlighting wall area
+        # advierte al jugador si está cerca de una pared resaltando el área de la pared
         r = self.player.rect.copy()
         self.player.rect = self.player.rect.inflate(16, 16)
         collide_list = pygame.sprite.spritecollide(self.player, self.wallgrp, False)
@@ -314,18 +348,18 @@ class Game:
 
         self.player.rect = r.copy()
 
-        # check player collision with wall
+        # verifica colisión del jugador con paredes
         if pygame.sprite.spritecollideany(self.player, self.wallgrp):
             self.electrocute()
 
-        # check player collision with robots
+        # verifica colisión del jugador con robots
         collide = pygame.sprite.spritecollideany(self.player, Robot.getGroup())
         if collide:
             if type(collide) is Robot:
                 self.robot_explode(collide)
             self.electrocute()
 
-        # check robot to robot collision
+        # verifica colisión entre robots
         combo = list(itertools.combinations(Robot.getGroup(), 2))
         for a,b in combo:
             if pygame.sprite.collide_rect(a,b):
@@ -334,22 +368,25 @@ class Game:
                 if type(b) is Robot:
                     self.robot_explode(b)
 
+    # Crea el enemigo Otto
     def spawnOtto(self):
-        pygame.time.set_timer(SPAWN_OTTO,0) # disable timer
+        pygame.time.set_timer(SPAWN_OTTO,0) # desactiva temporizador
         otto = Otto(self.levelcolor, self.player, imagefiles['otto'], OTTO_RECT, OTTO_SPRITES )
         self.sprites.add(otto)
         Robot.getGroup().add(otto)
 
+    # Activa los robots después de cierto tiempo
     def robotActive(self):
-        pygame.time.set_timer(ROBOT_ACTIVE,0) # disable timer
+        pygame.time.set_timer(ROBOT_ACTIVE,0) # desactiva temporizador
 
-        # wake up robots
+        # activa los robots
         for robot in Robot.getGroup():
             if type(robot) == Robot:
                 robot.active = True
 
+    # Lógica cuando el jugador sale del laberinto
     def playerExit(self,mazeexit):
-        pygame.time.set_timer(SPAWN_OTTO,0)     # disable any active timer(s)
+        pygame.time.set_timer(SPAWN_OTTO,0)     # desactiva temporizadores activos
         pygame.time.set_timer(ROBOT_ACTIVE,0)
         screenScroll(screen,mazeexit,self.levelcolor)
         self.maze.exit(mazeexit)
@@ -363,8 +400,9 @@ class Game:
 
         self.spriteCleanUp()
 
+    # Limpia todos los sprites y grupos
     def spriteCleanUp(self):
-        # clean up sprites
+        # limpia los sprites
         self.bullets.empty()
         self.wallgrp.empty()
         self.wall2grp.empty()
@@ -383,10 +421,11 @@ class Game:
         del self.score
         del self.gamefps
 
+    # Ejecuta el bucle principal del juego
     def run(self, levelcolor, robotLaser, frameupdate):
         self.levelcolor = levelcolor
 
-        # keep track of sprites
+        # mantiene el seguimiento de los sprites
         self.explodegrp = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         Bullet.bulletcnt = BULLETS_MAX
@@ -417,30 +456,30 @@ class Game:
                 self.sprites.add(bullet)
                 self.bullets.add(bullet)
 
-        # create robots
+        # crea los robots
         Robot.newLevel(robotLaser)
         for i in range(random.randrange(MIN_ROBOTS,MAX_ROBOTS)):
             robot = Robot(levelcolor, robotCallBack, self.player, grid, self.maze.pillars, self.wallgrp, imagefiles, ROBOT_RECT, ROBOT_SPRITES, frameupdate )
             self.sprites.add(robot)
 
-        # create lives
+        # crea las vidas
         for i in range(2, self.lives+1):
             life = Lives(i, imagefiles['lives'], LIVES_RECT, GREEN)
             self.sprites.add(life)
 
-        # keep track of time
+        # mantiene el seguimiento del tiempo
         clock = pygame.time.Clock()
 
         self.timer = pygame.time.get_ticks()
         self.cooldown = 600
 
-        # set timer event for Otto
-        pygame.time.set_timer(SPAWN_OTTO,1500*Robot.robotcnt) # 1.5sec/robot
+        # establece el evento del temporizador para Otto
+        pygame.time.set_timer(SPAWN_OTTO,1500*Robot.robotcnt) # 1.5seg/robot
 
-        # set timer event for robot movement
-        pygame.time.set_timer(ROBOT_ACTIVE,3000) # 3sec
+        # establece el evento del temporizador para el movimiento del robot
+        pygame.time.set_timer(ROBOT_ACTIVE,3000) # 3seg
 
-        # maze loop
+        # bucle del laberinto
         self.done = False
         while not self.done:
             now = pygame.time.get_ticks()
@@ -455,7 +494,7 @@ class Game:
                 self.player.mov(self.movdir)
 
                 if self.movdir & 0x10:
-                    # fire laser only if cooldown has been 0.6 secs
+                    # dispara el láser solo si ha pasado 0.6 seg de enfriamiento
                     if now - self.timer > self.cooldown:
                         bullet = self.player.fire(levelcolor, imagefiles['bullets'])
                         if bullet != None:
@@ -465,28 +504,30 @@ class Game:
 
             self.check_collisions()
             self.refreshSprites()
-            clock.tick(FPS)     # maintain frame rate
+            clock.tick(FPS)     # mantiene la tasa de cuadros
 
+    # Refresca y dibuja los sprites en pantalla
     def refreshSprites(self):
-        # used to erase the sprite
+        # usado para borrar el sprite
         def clear_callback(surf, rect):
             surf.fill(BLACK, rect)
             pass
 
-        # erase previous positions
+        # borra posiciones anteriores
         self.sprites.clear(screen, clear_callback)
 
-        # update sprites
+        # actualiza los sprites
         self.sprites.update()
 
         # debugAIgrid()
 
-        # redraw sprites
+        # redibuja los sprites
         dirty = self.sprites.draw(screen)
         pygame.display.update(dirty)
 
+    # Dibuja la cuadrícula de IA para depuración
     def debugAIgrid(self):
-        # debug code for robot AI grid
+        # código de depuración para la cuadrícula de IA del robot
         for x in range(MAZE_XMIN-4,MAZE_XMAX+16,16):
         #for x in range(MAZE_XMIN, MAZE_XMAX,24):
             for y in range(MAZE_YMIN+8,MAZE_YMAX ,22):
@@ -494,9 +535,9 @@ class Game:
                 pygame.draw.line(screen, RED, (x, y), (MAZE_XMAX, y), (1))
                 pygame.draw.line(screen, RED, (x, y), (x, MAZE_YMAX), (1))
 
-    # build border walls and maze walls
+    # Construye las paredes del laberinto y los bordes
     def Arena(self, screen, maze, doorcolor=None):
-        # borders: west top, west bottom, east top, east bottom, left top, left bottom, right top, right bottom
+        # bordes: oeste arriba, oeste abajo, este arriba, este abajo, izquierda arriba, izquierda abajo, derecha arriba, derecha abajo
         borders = [
             (BORDER_XMIN, BORDER_YMIN, WALLTHICKNESS, BORDER_VSEGMENT + WALLTHICKNESS),
             (BORDER_XMIN, BORDER_YMIN + WALLTHICKNESS + BORDER_VSEGMENT*2, WALLTHICKNESS, BORDER_VSEGMENT),
@@ -552,18 +593,16 @@ class Game:
             i += 1
 
             if p != "O":
-                # Si el pilar no es "O", crea el muro correspondiente en el laberinto
                 rect = pygame.Rect(int(x+x_offset), int(y+y_offset), int(w), int(h))
                 mazewall = WallObject(screen, WALL_COLOR, rect)
                 self.sprites.add(mazewall)
                 self.wallgrp.add(mazewall)
 
-        # NOTA: la puerta de salida está en el lado opuesto de donde el jugador salió del laberinto
+        # NOTA: la puerta de salida está opuesta a donde el jugador salió del laberinto
         x,y,w,h = 0,0,0,0
         doors = maze.getDoors()
         for door in doors[:]:
             if door in ("E", "W"):
-                # Si la puerta es Este u Oeste, calcula su posición y tamaño
                 y = BORDER_YMIN + WALLTHICKNESS + BORDER_VSEGMENT
                 w,h = WALLTHICKNESS//2, BORDER_VSEGMENT
                 if door == "E":
@@ -571,7 +610,6 @@ class Game:
                 else:
                     x = BORDER_XMIN + WALLTHICKNESS//4
             elif door in ("N", "S"):
-                # Si la puerta es Norte o Sur, calcula su posición y tamaño
                 x = BORDER_XMIN + WALLTHICKNESS + BORDER_HSEGMENT*2
                 w,h = BORDER_HSEGMENT, WALLTHICKNESS//2
                 if door == "N":
