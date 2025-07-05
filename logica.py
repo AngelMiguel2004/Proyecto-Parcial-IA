@@ -80,7 +80,7 @@ class GameState:
     # Si no se encuentra la carpeta o no hay música, no se reproduce nada
     def load_and_play_music(self):
         """Carga y reproduce la primera música encontrada en la carpeta 'music'."""
-        music_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'music')
+        music_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets','music')
         if os.path.isdir(music_folder):
             for file in os.listdir(music_folder):
                 if file.lower().endswith(('.mp3', '.ogg', '.wav')):
