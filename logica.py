@@ -5,7 +5,7 @@ if sys.version_info < (3, 7):
     print("Este juego requiere Python 3.7 o superior.")
     sys.exit(1)
 
-print("¡Bienvenido a PyBerzerk! Ejecutando el juego...")
+print("¡Bienvenido a Berserk Ejecutando el juego...")
 
 __author__ = 'TerryO'
 
@@ -73,6 +73,13 @@ class GameState:
         pygame.display.set_icon(icon)
 
         self.game = None
+
+        pygame.joystick.init()
+        self.joysticks = []
+        for i in range(pygame.joystick.get_count()):
+            joy = pygame.joystick.Joystick(i)
+            joy.init()
+            self.joysticks.append(joy)
     
 
     # Carga y reproduce música al iniciar el juego
@@ -99,7 +106,8 @@ class GameState:
     def HighScore(self):
         gamestate = "Play"
         keys = highScoresScreen(screen)
-        if keys[K_F1]:
+        # Asegura que keys sea un dict y contiene la clave K_F1
+        if isinstance(keys, dict) and keys.get(K_F1, False):
             gamestate = "Cntrls"
         self.Go(gamestate)
 
@@ -180,6 +188,13 @@ class Game:
         self.bonuspts = None
         self.keys = pygame.key.get_pressed()
 
+        # Detecta joysticks conectados (opcional, para referencia)
+        self.joysticks = []
+        for i in range(pygame.joystick.get_count()):
+            joy = pygame.joystick.Joystick(i)
+            joy.init()
+            self.joysticks.append(joy)
+
     # Procesa los eventos de pygame
     def process_events(self):
         for e in pygame.event.get():
@@ -218,6 +233,36 @@ class Game:
                 # Verifica si el modificador izquierdo está presionado
                 if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
                     pass
+            elif e.type == pygame.JOYAXISMOTION:
+                # Ejes: e.axis (0=izq/der, 1=arriba/abajo), e.value (-1 a 1)
+                if e.axis == 0:  # Horizontal
+                    if e.value < -0.5:
+                        self.movdir |= 0x01  # Izquierda
+                        self.movdir &= ~0x02
+                    elif e.value > 0.5:
+                        self.movdir |= 0x02  # Derecha
+                        self.movdir &= ~0x01
+                    else:
+                        self.movdir &= ~(0x01 | 0x02)
+                elif e.axis == 1:  # Vertical
+                    if e.value < -0.5:
+                        self.movdir |= 0x04  # Arriba
+                        self.movdir &= ~0x08
+                    elif e.value > 0.5:
+                        self.movdir |= 0x08  # Abajo
+                        self.movdir &= ~0x04
+                    else:
+                        self.movdir &= ~(0x04 | 0x08)
+            elif e.type == pygame.JOYBUTTONDOWN:
+                if e.button == 0:  # Botón A (disparo)
+                    self.movdir |= 0x10
+                elif e.button == 1:  # Botón B (también disparo/acción)
+                    self.movdir |= 0x10
+            elif e.type == pygame.JOYBUTTONUP:
+                if e.button == 0:
+                    self.movdir &= ~0x10
+                elif e.button == 1:
+                    self.movdir &= ~0x10
 
     # Lógica cuando el jugador es electrocutado
     def playerElectrocuted(self):
