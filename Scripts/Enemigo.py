@@ -1,3 +1,4 @@
+# Miguel Ángel Jiménez 23-EISN-2-010
 import pygame, Scripts.spritesheet as spritesheet, random
 from pygame.locals import *
 from Scripts.constantes import *

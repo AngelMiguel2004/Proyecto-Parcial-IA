@@ -1,3 +1,5 @@
+# Miguel Ángel Jiménez
+# Miguel Ángel Jiménez 23-EISN-2-010
 import pygame, Scripts.spritesheet as spritesheet
 from Scripts.constantes import *
 from Scripts.animateobj import *

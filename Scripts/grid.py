@@ -1,3 +1,4 @@
+# Miguel Ángel Jiménez 23-EISN-2-010
 # Este módulo implementa la lógica de la cuadrícula (grid) y el algoritmo A* para el juego PyBerzerk.
 
 import sys, os, pygame
