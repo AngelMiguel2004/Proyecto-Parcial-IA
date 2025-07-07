@@ -1,6 +1,6 @@
 # GAME-Berzerk 🎮🕹️
 
-¡Bienvenido a **Berzerk**! Un juego clásico de disparos en 2D hecho en Python usando Pygame. Este README te servirá como guía para explicar el proyecto en tu video y para que cualquier persona pueda entender, instalar y jugar Berzerk fácilmente.
+¡Bienvenido a **Berzerk**! Un juego clásico de disparos en 2D hecho en Python usando Pygame. 
 
 ---
 
