@@ -7,7 +7,7 @@
 ## 🎬 Guion sugerido para el video
 
 1. **Presentación**
-   - "Hola, soy [tu nombre] y hoy les presento mi proyecto: Berzerk, un juego retro hecho en Python con Pygame."
+   - "Hola, soy Miguel Angel y hoy les presento mi proyecto: Berzerk, un juego retro hecho en Python con Pygame."
 
 2. **¿Qué es Berzerk?**
    - "Berzerk es un juego de disparos en 2D inspirado en los clásicos de arcade. Controlas a un personaje que debe sobrevivir en un laberinto lleno de enemigos robots."
@@ -73,7 +73,7 @@
 
 ## 💡 Créditos y agradecimientos
 
-- Desarrollado por [tu nombre].
+- Desarrollado por Miguel Angel.
 - Inspirado en el clásico "Berzerk".
 - Gracias a la comunidad de Pygame por sus recursos y tutoriales.
 
